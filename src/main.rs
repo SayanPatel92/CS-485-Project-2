@@ -33,18 +33,25 @@ impl LinearMotion {
 struct CircularMotion {
     center_x: f64,
     center_y: f64,
+    center_z: f64,
     radius: f64,
 }
 
 impl CircularMotion {
-    // Assuming the motion needs to be traced at 5-degree intervals
-    fn calculate_positions(&self) {
+    // This method now accepts a `direction` parameter to handle rotation direction.
+    pub fn calculate_positions(&self, direction: &str) {
         let steps = 360 / 5;  // Number of steps for a full circle
         for step in 0..steps {
-            let angle = (step * 5) as f64 * std::f64::consts::PI / 180.0;
+            let angle_degrees = if direction == "CW" {
+                -(step * 5) // Clockwise rotation
+            } else {
+                step * 5 // Counterclockwise rotation
+            };
+            let angle = angle_degrees as f64 * std::f64::consts::PI / 180.0;
             let x = self.center_x + self.radius * angle.cos();
             let y = self.center_y + self.radius * angle.sin();
-            println!("Circular Position at step {}: {:.2}, {:.2}", step, x, y);
+            let z = self.center_z; // Z remains constant for a flat circular motion
+            println!("Circular Position at step {}: {:.2}, {:.2}, {:.2}", step, x, y, z);
         }
     }
 }
@@ -76,9 +83,10 @@ fn main() -> io::Result<()> {
             "CW" | "CCW" => {
                 let center_x = parts[1].strip_prefix("X").unwrap_or("0").parse::<f64>().map_err(parse_float_error_to_io_error)?;
                 let center_y = parts[2].strip_prefix("Y").unwrap_or("0").parse::<f64>().map_err(parse_float_error_to_io_error)?;
+                let center_z = parts[3].strip_prefix("Z").unwrap_or("0").parse::<f64>().map_err(parse_float_error_to_io_error)?; // Ensure you have Z part in your input data
                 let radius = parts[4].strip_prefix("I").unwrap_or("0").parse::<f64>().map_err(parse_float_error_to_io_error)?;
-                let motion = CircularMotion { center_x, center_y, radius };
-                motion.calculate_positions();
+                let motion = CircularMotion { center_x, center_y, center_z, radius };
+                motion.calculate_positions(parts[0]);  // parts[0] should be "CW" or "CCW"
             },
             _ => eprintln!("Unknown command type: {}", parts[0]),
         }
